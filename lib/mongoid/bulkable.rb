@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "mongoid/bulkable/version"
 
 module Mongoid
@@ -25,11 +27,12 @@ module Mongoid
           end.compact
 
           next if documents_batch.empty?
-          insert_result = self.collection.insert_many(documents_batch)
+
+          insert_result = collection.insert_many(documents_batch)
           all_inserted_ids += insert_result.inserted_ids if insert_result.inserted_ids
         end
 
-        bulk_creation_result.created_objects = self.where(:_id.in => all_inserted_ids)
+        bulk_creation_result.created_objects = where(:_id.in => all_inserted_ids)
         bulk_creation_result
       end
     end

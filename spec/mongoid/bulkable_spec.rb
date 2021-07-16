@@ -1,5 +1,7 @@
-require 'spec_helper'
-require 'mongoid'
+# frozen_string_literal: true
+
+require "spec_helper"
+require "mongoid"
 require "mongoid/bulkable/creation_result"
 
 class Banana

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "bundler/setup"
 require "mongoid"
 require "mongoid/bulkable"
@@ -14,7 +16,6 @@ RSpec.configure do |config|
   end
 end
 
-
-ENV['MONGOID_ENV'] = "test"
-Mongoid.load!(File.expand_path("../mongoid.yml", __FILE__), :test)
+ENV["MONGOID_ENV"] = "test"
+Mongoid.load!(File.expand_path("mongoid.yml", __dir__), :test)
 Mongo::Logger.logger.level = ::Logger::INFO
