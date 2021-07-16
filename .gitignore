@@ -10,6 +10,8 @@
 # rspec failure tracking
 .rspec_status
 
-.idea
+/.idea/
+*.iml
 
-/bin/
+/bin/*
+.byebug_history
