@@ -18,7 +18,11 @@ module Mongoid
         created_objects = nil
 
         objects.each_slice(batch_size) do |objects_batch|
-          invalid_objects, created_objects = recursively_bulk_create_objects(self, objects_batch, validate, create_belongs_to_relations: create_belongs_to_relations)
+          invalid_objects, created_objects =
+            recursively_bulk_create_objects(self, objects_batch,
+                                            validate: validate,
+                                            create_has_relations: true,
+                                            create_belongs_to_relations: create_belongs_to_relations)
         end
 
         bulk_creation_result.invalid_objects = invalid_objects
@@ -28,40 +32,48 @@ module Mongoid
 
       private
 
-      def recursively_bulk_create_objects(klass, objects, validate, create_belongs_to_relations: [])
+      def recursively_bulk_create_objects(
+        klass,
+        objects,
+        validate:,
+        create_has_relations: true,
+        create_belongs_to_relations: []
+      )
         object_classes = objects.map(&:class).uniq
         if object_classes.length > 1 || object_classes.first != klass
-          raise ArgumentError, 'One or more objects are not instances of the provided class'
+          raise ArgumentError, "One or more objects are not instances of the provided class"
         end
 
-        has_something_relations = klass.relations.filter do |_, relation|
+        has_one_or_many_relations = klass.relations.filter do |_, relation|
           relation.macro == :has_many || relation.macro == :has_one
         end.values
 
-        # belongs_to_relations = klass.relations.select do |_, relation|
-        #   relation.macro == :belongs_to && relation.name.in?(create_belongs_to_relations)
-        # end.values
+        belongs_to_relations = klass.relations.select do |_, relation|
+          relation.macro == :belongs_to && relation.name.in?(create_belongs_to_relations)
+        end.values
 
-        relation_classes_and_objects = {}
-        # belongs_to_relation_classes_and_objects = {}
+        relation_classes_to_objects = {}
+        belongs_to_relation_classes_to_objects = {}
         documents_to_insert = []
         invalid_objects = []
 
         objects.each do |object|
-          # belongs_to_relations.each do |relation|
-          #   relation_object = object.public_send(relation.name)
-          #   belongs_to_relation_classes_and_objects[relation.class_name.constantize] ||= []
-          #   belongs_to_relation_classes_and_objects[relation.class_name.constantize] << relation_object if relation_object
-          # end
+          belongs_to_relations.each do |relation|
+            relation_object = object.public_send(relation.name)
+            unless relation_object.nil?
+              belongs_to_relation_classes_to_objects[relation.class_name.constantize] ||= []
+              belongs_to_relation_classes_to_objects[relation.class_name.constantize] << relation_object
+            end
+          end
 
           if object.valid?
             documents_to_insert << object.as_document
 
-            has_something_relations.each do |relation|
+            has_one_or_many_relations.each do |relation|
               relation_objects = object.public_send(relation.name)
               if !relation_objects.nil? && !relation_objects.empty?
-                relation_classes_and_objects[relation.class_name.constantize] ||= []
-                relation_classes_and_objects[relation.class_name.constantize] += relation_objects
+                relation_classes_to_objects[relation.class_name.constantize] ||= []
+                relation_classes_to_objects[relation.class_name.constantize] += relation_objects
               end
             end
           else
@@ -70,17 +82,11 @@ module Mongoid
         end
 
         inner_invalid_objects = []
-        # created_objects = []
-        # belongs_to_relation_classes_and_objects.each do |kls, objs|
-        #   _invalid_objects, created_belongs_to_objects = recursively_bulk_create_objects(kls, objs, validate)
-        #   created_belongs_to_objects_with_ids = created_belongs_to_objects.each_with_object({}) do |created_belongs_to_object, obj|
-        #     obj[created_belongs_to_object.id] = created_belongs_to_object
-        #   end
-        #
-        #   objects.each do |object|
-        #     obj created_belongs_to_objects_with_ids
-        #   end
-        # end
+        created_objects = []
+        belongs_to_relation_classes_to_objects.each do |kls, objs|
+          _inner_invalid_objects, created_belongs_to_objects =
+            recursively_bulk_create_objects(kls, objs, create_has_relations: false, validate: validate)
+        end
 
         return [[], []] if documents_to_insert.empty?
 
@@ -89,8 +95,12 @@ module Mongoid
 
         inner_invalid_objects = []
         inner_created_objects = []
-        relation_classes_and_objects.each do |kls, objs|
-          inner_invalid_objects, inner_created_objects = recursively_bulk_create_objects(kls, objs, validate)
+
+        if create_has_relations
+          relation_classes_to_objects.each do |kls, objs|
+            inner_invalid_objects, inner_created_objects =
+              recursively_bulk_create_objects(kls, objs, validate: validate)
+          end
         end
 
         [

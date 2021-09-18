@@ -73,20 +73,14 @@ RSpec.describe Mongoid::Bulkable do
           Stand.new(
             name: "Stand 1",
             fruits: [
-              Fruit.new(
-                name: "Banana",
-              ),
-              Fruit.new(
-                name: "Apple",
-              )
+              Fruit.new(name: "Banana"),
+              Fruit.new(name: "Apple")
             ]
           ),
           Stand.new(
             name: "Stand 2",
             fruits: [
-              Fruit.new(
-                name: "Melon",
-              )
+              Fruit.new(name: "Melon")
             ]
           ),
           Stand.new
@@ -109,68 +103,37 @@ RSpec.describe Mongoid::Bulkable do
       end
     end
 
-    # context "when bulk-creating objects and their belongs-to relations" do
-    #   subject(:creation_result) { Fruit.bulk_create(fruits, create_belongs_to_relations: [:stand]) }
-    #
-    #   let(:fruits) do
-    #     [
-    #       Fruit.new(
-    #         name: "Apple",
-    #         stand: Stand.new(name: "Stand 1")
-    #       ),
-    #       Fruit.new(
-    #         name: "Banana",
-    #         stand: Stand.new(name: "Stand 2")
-    #       ),
-    #     ]
-    #   end
-    #
-    #   # let(:stands) do
-    #   #   [
-    #   #     Stand.new(
-    #   #       name: "Stand 1",
-    #   #       fruits: [
-    #   #         Fruit.new(
-    #   #           name: "Stand 1",
-    #   #         ),
-    #   #         Fruit.new(
-    #   #           name: "Stand 1",
-    #   #         )
-    #   #       ]
-    #   #     ),
-    #   #     Stand.new(
-    #   #       name: "Stand 2",
-    #   #       fruits: [
-    #   #         Fruit.new(
-    #   #           name: "Stand 1",
-    #   #         )
-    #   #       ]
-    #   #     ),
-    #   #   ]
-    #   # end
-    #
-    #   # it "thing" do
-    #   #   Fruit.bulk_create(bananas)
-    #   #   # byebug
-    #   #   # puts 'bla'
-    #   # end
-    #
-    #   # it { is_expected.to be_instance_of(Mongoid::Bulkable::CreationResult) }
-    #   #
-    #   it "saves only valid objects to the DB" do
-    #     expect { creation_result }.to change(Stand, :count).by(2)
-    #     expect { creation_result }.to change(Fruit, :count).by(3)
-    #   end
-    #
-    #   # it "collects the created objects" do
-    #   #   expect(creation_result.created_objects.length).to eq(3)
-    #   #   expect(creation_result.created_objects).to all(be_instance_of(Fruit))
-    #   # end
-    #   #
-    #   # it "collects the invalid objects" do
-    #   #   expect(creation_result.invalid_objects.length).to eq(1)
-    #   #   expect(creation_result.invalid_objects).to all(be_instance_of(Fruit))
-    #   # end
-    # end
+    context "when bulk-creating objects and their belongs-to associations" do
+      subject(:creation_result) { Fruit.bulk_create(fruits, create_belongs_to_relations: [:stand]) }
+
+      let(:fruits) do
+        [
+          Fruit.new(
+            name: "Apple",
+            stand: Stand.new(name: "Stand 1")
+          ),
+          Fruit.new(
+            name: "Banana",
+            stand: Stand.new(name: "Stand 2")
+          )
+        ]
+      end
+
+      it { is_expected.to be_instance_of(Mongoid::Bulkable::CreationResult) }
+
+      it "saves only valid objects to the DB" do
+        expect { creation_result }.to change(Fruit, :count).by(2).and change(Stand, :count).by(2)
+      end
+
+      it "collects the created objects" do
+        expect(creation_result.created_objects.length).to eq(2)
+        expect(creation_result.created_objects).to all(be_instance_of(Fruit))
+      end
+
+      it "collects the invalid objects" do
+        expect(creation_result.invalid_objects.length).to eq(0)
+        expect(creation_result.invalid_objects).to all(be_instance_of(Fruit))
+      end
+    end
   end
 end
