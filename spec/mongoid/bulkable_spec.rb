@@ -48,7 +48,7 @@ RSpec.describe Mongoid::Bulkable do
         ]
       end
 
-      it { is_expected.to be_instance_of(Mongoid::Bulkable::CreationResult) }
+      it { is_expected.to be_instance_of(Mongoid::Bulkable::CreateResult) }
 
       it "saves only valid objects to the DB" do
         expect { creation_result }.to change(Stand, :count).by(3)
@@ -87,7 +87,7 @@ RSpec.describe Mongoid::Bulkable do
         ]
       end
 
-      it { is_expected.to be_instance_of(Mongoid::Bulkable::CreationResult) }
+      it { is_expected.to be_instance_of(Mongoid::Bulkable::CreateResult) }
 
       it "saves valid objects to the DB" do
         expect { creation_result }.to change(Stand, :count).by(2).and change(Fruit, :count).by(3)
@@ -119,7 +119,7 @@ RSpec.describe Mongoid::Bulkable do
         ]
       end
 
-      it { is_expected.to be_instance_of(Mongoid::Bulkable::CreationResult) }
+      it { is_expected.to be_instance_of(Mongoid::Bulkable::CreateResult) }
 
       it "saves only valid objects to the DB" do
         expect { creation_result }.to change(Fruit, :count).by(2).and change(Stand, :count).by(2)

@@ -13,7 +13,7 @@ module Mongoid
     module ClassMethods
       def bulk_create(objects, batch_size: nil, validate: true, create_belongs_to_relations: [])
         batch_size ||= objects.size
-        bulk_creation_result = CreationResult.new
+        bulk_creation_result = CreateResult.new
         invalid_objects = nil
         created_objects = nil
 
