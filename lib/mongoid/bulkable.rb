@@ -19,10 +19,13 @@ module Mongoid
 
         objects.each_slice(batch_size) do |objects_batch|
           invalid_objects, created_objects =
-            recursively_bulk_create_objects(self, objects_batch,
-                                            validate: validate,
-                                            create_has_relations: true,
-                                            create_belongs_to_relations: create_belongs_to_relations)
+            recursively_bulk_create_objects(
+              self,
+              objects_batch,
+              validate: validate,
+              create_has_relations: true,
+              create_belongs_to_relations: create_belongs_to_relations
+            )
         end
 
         bulk_creation_result.invalid_objects = invalid_objects
@@ -87,7 +90,7 @@ module Mongoid
           _inner_invalid_objects, created_belongs_to_objects =
             recursively_bulk_create_objects(kls, objs, create_has_relations: false, validate: validate)
         end
-
+        x
         return [[], []] if documents_to_insert.empty?
 
         insert_result = klass.collection.insert_many(documents_to_insert)
