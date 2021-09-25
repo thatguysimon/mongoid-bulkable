@@ -2,7 +2,7 @@
 
 require "spec_helper"
 require "mongoid"
-require "mongoid/bulkable/creation_result"
+require "mongoid/bulkable/create_result"
 
 class Market
   include Mongoid::Document
@@ -37,7 +37,7 @@ end
 RSpec.describe Mongoid::Bulkable do
   describe ".bulk_create" do
     context "when bulk-creating objects" do
-      subject(:creation_result) { Stand.bulk_create(stands) }
+      subject(:create_result) { Stand.bulk_create(stands) }
 
       let(:stands) do
         [
@@ -51,22 +51,22 @@ RSpec.describe Mongoid::Bulkable do
       it { is_expected.to be_instance_of(Mongoid::Bulkable::CreateResult) }
 
       it "saves only valid objects to the DB" do
-        expect { creation_result }.to change(Stand, :count).by(3)
+        expect { create_result }.to change(Stand, :count).by(3)
       end
 
       it "collects the created objects" do
-        expect(creation_result.created_objects.length).to eq(3)
-        expect(creation_result.created_objects).to all(be_instance_of(Stand))
+        expect(create_result.created_objects.length).to eq(3)
+        expect(create_result.created_objects).to all(be_instance_of(Stand))
       end
 
       it "collects the invalid objects" do
-        expect(creation_result.invalid_objects.length).to eq(1)
-        expect(creation_result.invalid_objects).to all(be_instance_of(Stand))
+        expect(create_result.invalid_objects.length).to eq(1)
+        expect(create_result.invalid_objects).to all(be_instance_of(Stand))
       end
     end
 
     context "when bulk-creating objects with associations" do
-      subject(:creation_result) { Stand.bulk_create(stands) }
+      subject(:create_result) { Stand.bulk_create(stands) }
 
       let(:stands) do
         [
@@ -90,21 +90,21 @@ RSpec.describe Mongoid::Bulkable do
       it { is_expected.to be_instance_of(Mongoid::Bulkable::CreateResult) }
 
       it "saves valid objects to the DB" do
-        expect { creation_result }.to change(Stand, :count).by(2).and change(Fruit, :count).by(3)
+        expect { create_result }.to change(Stand, :count).by(2).and change(Fruit, :count).by(3)
       end
 
       it "collects the created objects" do
-        expect(creation_result.created_objects.length).to eq(5)
+        expect(create_result.created_objects.length).to eq(5)
       end
 
       it "collects the invalid objects" do
-        expect(creation_result.invalid_objects.length).to eq(1)
-        expect(creation_result.invalid_objects.first).to be_instance_of(Stand)
+        expect(create_result.invalid_objects.length).to eq(1)
+        expect(create_result.invalid_objects.first).to be_instance_of(Stand)
       end
     end
 
     context "when bulk-creating objects and their belongs-to associations" do
-      subject(:creation_result) { Fruit.bulk_create(fruits, create_belongs_to_relations: [:stand]) }
+      subject(:create_result) { Fruit.bulk_create(fruits, create_belongs_to_relations: [:stand]) }
 
       let(:fruits) do
         [
@@ -122,17 +122,17 @@ RSpec.describe Mongoid::Bulkable do
       it { is_expected.to be_instance_of(Mongoid::Bulkable::CreateResult) }
 
       it "saves only valid objects to the DB" do
-        expect { creation_result }.to change(Fruit, :count).by(2).and change(Stand, :count).by(2)
+        expect { create_result }.to change(Fruit, :count).by(2).and change(Stand, :count).by(2)
       end
 
       it "collects the created objects" do
-        expect(creation_result.created_objects.length).to eq(2)
-        expect(creation_result.created_objects).to all(be_instance_of(Fruit))
+        expect(create_result.created_objects.length).to eq(2)
+        expect(create_result.created_objects).to all(be_instance_of(Fruit))
       end
 
       it "collects the invalid objects" do
-        expect(creation_result.invalid_objects.length).to eq(0)
-        expect(creation_result.invalid_objects).to all(be_instance_of(Fruit))
+        expect(create_result.invalid_objects.length).to eq(0)
+        expect(create_result.invalid_objects).to all(be_instance_of(Fruit))
       end
     end
   end

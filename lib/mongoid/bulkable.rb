@@ -13,7 +13,7 @@ module Mongoid
     module ClassMethods
       def bulk_create(objects, batch_size: nil, validate: true, create_belongs_to_relations: [])
         batch_size ||= objects.size
-        bulk_creation_result = CreateResult.new
+        bulk_create_result = CreateResult.new
         invalid_objects = nil
         created_objects = nil
 
@@ -28,9 +28,9 @@ module Mongoid
             )
         end
 
-        bulk_creation_result.invalid_objects = invalid_objects
-        bulk_creation_result.created_objects = created_objects
-        bulk_creation_result
+        bulk_create_result.invalid_objects = invalid_objects
+        bulk_create_result.created_objects = created_objects
+        bulk_create_result
       end
 
       private
@@ -51,7 +51,7 @@ module Mongoid
           relation.macro == :has_many || relation.macro == :has_one
         end.values
 
-        belongs_to_relations = klass.relations.select do |_, relation|
+        belongs_to_relations = klass.relations.filter do |_, relation|
           relation.macro == :belongs_to && relation.name.in?(create_belongs_to_relations)
         end.values
 
@@ -90,7 +90,7 @@ module Mongoid
           _inner_invalid_objects, created_belongs_to_objects =
             recursively_bulk_create_objects(kls, objs, create_has_relations: false, validate: validate)
         end
-        x
+
         return [[], []] if documents_to_insert.empty?
 
         insert_result = klass.collection.insert_many(documents_to_insert)
