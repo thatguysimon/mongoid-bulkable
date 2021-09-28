@@ -36,22 +36,22 @@ module Mongoid
       private
 
       def recursively_bulk_create_objects(
-        klass,
+        model_class,
         objects,
         validate:,
         create_has_associations: true,
         create_belongs_to_associations: []
       )
         object_classes = objects.map(&:class).uniq
-        if object_classes.length > 1 || object_classes.first != klass
+        if object_classes.length > 1 || object_classes.first != model_class
           raise ArgumentError, "One or more objects are not instances of the provided class"
         end
 
-        belongs_to_association = klass.relations.filter do |_, association|
+        belongs_to_association = model_class.relations.filter do |_, association|
           association.macro == :belongs_to && association.name.in?(create_belongs_to_associations)
         end.values
 
-        has_one_or_many_associations = klass.relations.filter do |_, association|
+        has_one_or_many_associations = model_class.relations.filter do |_, association|
           association.macro == :has_many || association.macro == :has_one
         end.values
 
@@ -86,7 +86,7 @@ module Mongoid
 
         return [invalid_objects, []] if documents_to_insert.empty?
 
-        insert_result = klass.collection.insert_many(documents_to_insert)
+        insert_result = model_class.collection.insert_many(documents_to_insert)
 
         associations_invalid_objects = []
         associations_inserted_ids = []
