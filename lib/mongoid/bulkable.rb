@@ -84,31 +84,35 @@ module Mongoid
           end
         end
 
-        inner_invalid_objects = []
-        created_objects = []
-        belongs_to_relation_classes_to_objects.each do |kls, objs|
-          _inner_invalid_objects, created_belongs_to_objects =
-            recursively_bulk_create_objects(kls, objs, create_has_relations: false, validate: validate)
-        end
-
         return [invalid_objects, []] if documents_to_insert.empty?
 
         insert_result = klass.collection.insert_many(documents_to_insert)
         inserted_ids = insert_result.inserted_ids
 
-        inner_invalid_objects = []
-        inner_inserted_ids = []
+        associations_invalid_objects = []
+        associations_inserted_ids = []
+
+        belongs_to_relation_classes_to_objects.each do |kls, objs|
+          belongs_to_invalid_objects, belongs_to_inserted_ids =
+            recursively_bulk_create_objects(kls, objs, create_has_relations: false, validate: validate)
+
+          associations_invalid_objects += belongs_to_invalid_objects
+          associations_inserted_ids += belongs_to_inserted_ids
+        end
 
         if create_has_relations
           relation_classes_to_objects.each do |kls, objs|
-            inner_invalid_objects, inner_inserted_ids =
+            has_relations_invalid_objects, has_relations_inserted_ids =
               recursively_bulk_create_objects(kls, objs, validate: validate)
+
+            associations_invalid_objects += has_relations_invalid_objects
+            associations_inserted_ids += has_relations_inserted_ids
           end
         end
 
         [
-          invalid_objects + inner_invalid_objects,
-          inserted_ids + inner_inserted_ids
+          invalid_objects + associations_invalid_objects,
+          inserted_ids + associations_inserted_ids
         ]
       end
     end

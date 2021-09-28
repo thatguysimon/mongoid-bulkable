@@ -125,7 +125,7 @@ RSpec.describe Mongoid::Bulkable do
       end
 
       it "collects the inserted ids" do
-        expect(create_result.inserted_ids.length).to eq(2)
+        expect(create_result.inserted_ids.length).to eq(4)
       end
 
       it "collects the invalid objects" do
