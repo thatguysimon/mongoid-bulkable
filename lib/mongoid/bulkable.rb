@@ -11,7 +11,7 @@ module Mongoid
     end
 
     module ClassMethods
-      def bulk_create(objects, batch_size: nil, validate: true, create_belongs_to_relations: [])
+      def bulk_create(objects, batch_size: nil, validate: true, create_belongs_to_associations: [])
         batch_size ||= objects.size
         bulk_create_result = CreateResult.new
         invalid_objects = []
@@ -23,8 +23,8 @@ module Mongoid
               self,
               objects_batch,
               validate: validate,
-              create_has_relations: true,
-              create_belongs_to_relations: create_belongs_to_relations
+              create_has_associations: true,
+              create_belongs_to_associations: create_belongs_to_associations
             )
         end
 
@@ -39,44 +39,44 @@ module Mongoid
         klass,
         objects,
         validate:,
-        create_has_relations: true,
-        create_belongs_to_relations: []
+        create_has_associations: true,
+        create_belongs_to_associations: []
       )
         object_classes = objects.map(&:class).uniq
         if object_classes.length > 1 || object_classes.first != klass
           raise ArgumentError, "One or more objects are not instances of the provided class"
         end
 
-        has_one_or_many_relations = klass.relations.filter do |_, relation|
-          relation.macro == :has_many || relation.macro == :has_one
+        has_one_or_many_associations = klass.relations.filter do |_, association|
+          association.macro == :has_many || association.macro == :has_one
         end.values
 
-        belongs_to_relations = klass.relations.filter do |_, relation|
-          relation.macro == :belongs_to && relation.name.in?(create_belongs_to_relations)
+        belongs_to_association = klass.relations.filter do |_, association|
+          association.macro == :belongs_to && association.name.in?(create_belongs_to_associations)
         end.values
 
-        relation_classes_to_objects = {}
-        belongs_to_relation_classes_to_objects = {}
+        association_classes_to_objects = {}
+        belongs_to_association_classes_to_objects = {}
         documents_to_insert = []
         invalid_objects = []
 
         objects.each do |object|
-          belongs_to_relations.each do |relation|
-            relation_object = object.public_send(relation.name)
-            unless relation_object.nil?
-              belongs_to_relation_classes_to_objects[relation.class_name.constantize] ||= []
-              belongs_to_relation_classes_to_objects[relation.class_name.constantize] << relation_object
+          belongs_to_association.each do |association|
+            associated_object = object.public_send(association.name)
+            unless associated_object.nil?
+              belongs_to_association_classes_to_objects[association.class_name.constantize] ||= []
+              belongs_to_association_classes_to_objects[association.class_name.constantize] << associated_object
             end
           end
 
           if object.valid?
             documents_to_insert << object.as_document
 
-            has_one_or_many_relations.each do |relation|
-              relation_objects = object.public_send(relation.name)
-              if !relation_objects.nil? && !relation_objects.empty?
-                relation_classes_to_objects[relation.class_name.constantize] ||= []
-                relation_classes_to_objects[relation.class_name.constantize] += relation_objects
+            has_one_or_many_associations.each do |association|
+              association_objects = object.public_send(association.name)
+              if !association_objects.nil? && !association_objects.empty?
+                association_classes_to_objects[association.class_name.constantize] ||= []
+                association_classes_to_objects[association.class_name.constantize] += association_objects
               end
             end
           else
@@ -92,21 +92,21 @@ module Mongoid
         associations_invalid_objects = []
         associations_inserted_ids = []
 
-        belongs_to_relation_classes_to_objects.each do |kls, objs|
+        belongs_to_association_classes_to_objects.each do |kls, objs|
           belongs_to_invalid_objects, belongs_to_inserted_ids =
-            recursively_bulk_create_objects(kls, objs, create_has_relations: false, validate: validate)
+            recursively_bulk_create_objects(kls, objs, create_has_associations: false, validate: validate)
 
           associations_invalid_objects += belongs_to_invalid_objects
           associations_inserted_ids += belongs_to_inserted_ids
         end
 
-        if create_has_relations
-          relation_classes_to_objects.each do |kls, objs|
-            has_relations_invalid_objects, has_relations_inserted_ids =
+        if create_has_associations
+          association_classes_to_objects.each do |kls, objs|
+            has_associations_invalid_objects, has_associations_inserted_ids =
               recursively_bulk_create_objects(kls, objs, validate: validate)
 
-            associations_invalid_objects += has_relations_invalid_objects
-            associations_inserted_ids += has_relations_inserted_ids
+            associations_invalid_objects += has_associations_invalid_objects
+            associations_inserted_ids += has_associations_inserted_ids
           end
         end
 

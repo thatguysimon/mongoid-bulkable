@@ -103,7 +103,7 @@ RSpec.describe Mongoid::Bulkable do
     end
 
     context "when bulk-creating objects and their belongs-to associations" do
-      subject(:create_result) { Fruit.bulk_create(fruits, create_belongs_to_relations: [:stand]) }
+      subject(:create_result) { Fruit.bulk_create(fruits, create_belongs_to_associations: [:stand]) }
 
       let(:fruits) do
         [
