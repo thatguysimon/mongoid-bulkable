@@ -22,7 +22,7 @@ class Stand
   belongs_to :market, required: false
   has_many :fruits
 
-  validates :name, presence: true
+  validates :name, presence: true, length: { minimum: 6 }
 end
 
 class Fruit
@@ -61,6 +61,30 @@ RSpec.describe Mongoid::Bulkable do
       it "collects the invalid objects" do
         expect(create_result.invalid_objects.length).to eq(1)
         expect(create_result.invalid_objects).to all(be_instance_of(Stand))
+      end
+    end
+
+    context "when bulk-creating objects without validation" do
+      subject(:create_result) { Stand.bulk_create(stands, validate: false) }
+
+      let(:stands) do
+        [
+          Stand.new(name: "Stand 1"),
+          Stand.new(name: "short"),
+          Stand.new
+        ]
+      end
+
+      it "saves all objects to the DB" do
+        expect { create_result }.to change(Stand, :count).by(3)
+      end
+
+      it "collects the inserted ids" do
+        expect(create_result.inserted_ids.length).to eq(3)
+      end
+
+      it "collects zero invalid objects" do
+        expect(create_result.invalid_objects).to be_empty
       end
     end
 

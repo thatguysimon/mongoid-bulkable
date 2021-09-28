@@ -69,7 +69,7 @@ module Mongoid
             end
           end
 
-          if object.valid?
+          if !validate || object.valid?
             documents_to_insert << object.as_document
 
             has_one_or_many_associations.each do |association|
