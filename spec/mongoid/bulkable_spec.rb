@@ -54,9 +54,8 @@ RSpec.describe Mongoid::Bulkable do
         expect { create_result }.to change(Stand, :count).by(3)
       end
 
-      it "collects the created objects" do
-        expect(create_result.created_objects.length).to eq(3)
-        expect(create_result.created_objects).to all(be_instance_of(Stand))
+      it "collects the inserted ids" do
+        expect(create_result.inserted_ids.length).to eq(3)
       end
 
       it "collects the invalid objects" do
@@ -93,8 +92,8 @@ RSpec.describe Mongoid::Bulkable do
         expect { create_result }.to change(Stand, :count).by(2).and change(Fruit, :count).by(3)
       end
 
-      it "collects the created objects" do
-        expect(create_result.created_objects.length).to eq(5)
+      it "collects the inserted ids" do
+        expect(create_result.inserted_ids.length).to eq(5)
       end
 
       it "collects the invalid objects" do
@@ -125,9 +124,8 @@ RSpec.describe Mongoid::Bulkable do
         expect { create_result }.to change(Fruit, :count).by(2).and change(Stand, :count).by(2)
       end
 
-      it "collects the created objects" do
-        expect(create_result.created_objects.length).to eq(2)
-        expect(create_result.created_objects).to all(be_instance_of(Fruit))
+      it "collects the inserted ids" do
+        expect(create_result.inserted_ids.length).to eq(2)
       end
 
       it "collects the invalid objects" do

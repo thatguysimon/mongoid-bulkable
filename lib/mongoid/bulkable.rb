@@ -14,11 +14,11 @@ module Mongoid
       def bulk_create(objects, batch_size: nil, validate: true, create_belongs_to_relations: [])
         batch_size ||= objects.size
         bulk_create_result = CreateResult.new
-        invalid_objects = nil
-        created_objects = nil
+        invalid_objects = []
+        inserted_ids = []
 
         objects.each_slice(batch_size) do |objects_batch|
-          invalid_objects, created_objects =
+          invalid_objects, inserted_ids =
             recursively_bulk_create_objects(
               self,
               objects_batch,
@@ -29,7 +29,7 @@ module Mongoid
         end
 
         bulk_create_result.invalid_objects = invalid_objects
-        bulk_create_result.created_objects = created_objects
+        bulk_create_result.inserted_ids = inserted_ids
         bulk_create_result
       end
 
@@ -91,24 +91,24 @@ module Mongoid
             recursively_bulk_create_objects(kls, objs, create_has_relations: false, validate: validate)
         end
 
-        return [[], []] if documents_to_insert.empty?
+        return [invalid_objects, []] if documents_to_insert.empty?
 
         insert_result = klass.collection.insert_many(documents_to_insert)
         inserted_ids = insert_result.inserted_ids
 
         inner_invalid_objects = []
-        inner_created_objects = []
+        inner_inserted_ids = []
 
         if create_has_relations
           relation_classes_to_objects.each do |kls, objs|
-            inner_invalid_objects, inner_created_objects =
+            inner_invalid_objects, inner_inserted_ids =
               recursively_bulk_create_objects(kls, objs, validate: validate)
           end
         end
 
         [
           invalid_objects + inner_invalid_objects,
-          klass.where(:_id.in => inserted_ids).to_a + inner_created_objects
+          inserted_ids + inner_inserted_ids
         ]
       end
     end

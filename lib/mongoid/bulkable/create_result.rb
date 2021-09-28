@@ -3,11 +3,11 @@
 module Mongoid
   module Bulkable
     class CreateResult
-      attr_accessor :invalid_objects, :created_objects
+      attr_accessor :invalid_objects, :inserted_ids
 
       def initialize
         @invalid_objects = []
-        @created_objects = []
+        @inserted_ids = []
       end
     end
   end
