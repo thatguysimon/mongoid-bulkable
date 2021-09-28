@@ -47,12 +47,12 @@ module Mongoid
           raise ArgumentError, "One or more objects are not instances of the provided class"
         end
 
-        has_one_or_many_associations = klass.relations.filter do |_, association|
-          association.macro == :has_many || association.macro == :has_one
-        end.values
-
         belongs_to_association = klass.relations.filter do |_, association|
           association.macro == :belongs_to && association.name.in?(create_belongs_to_associations)
+        end.values
+
+        has_one_or_many_associations = klass.relations.filter do |_, association|
+          association.macro == :has_many || association.macro == :has_one
         end.values
 
         association_classes_to_objects = {}
@@ -61,16 +61,16 @@ module Mongoid
         invalid_objects = []
 
         objects.each do |object|
-          belongs_to_association.each do |association|
-            associated_object = object.public_send(association.name)
-            unless associated_object.nil?
-              belongs_to_association_classes_to_objects[association.class_name.constantize] ||= []
-              belongs_to_association_classes_to_objects[association.class_name.constantize] << associated_object
-            end
-          end
-
           if !validate || object.valid?
             documents_to_insert << object.as_document
+
+            belongs_to_association.each do |association|
+              associated_object = object.public_send(association.name)
+              unless associated_object.nil?
+                belongs_to_association_classes_to_objects[association.class_name.constantize] ||= []
+                belongs_to_association_classes_to_objects[association.class_name.constantize] << associated_object
+              end
+            end
 
             has_one_or_many_associations.each do |association|
               association_objects = object.public_send(association.name)
@@ -87,7 +87,6 @@ module Mongoid
         return [invalid_objects, []] if documents_to_insert.empty?
 
         insert_result = klass.collection.insert_many(documents_to_insert)
-        inserted_ids = insert_result.inserted_ids
 
         associations_invalid_objects = []
         associations_inserted_ids = []
@@ -112,7 +111,7 @@ module Mongoid
 
         [
           invalid_objects + associations_invalid_objects,
-          inserted_ids + associations_inserted_ids
+          insert_result.inserted_ids + associations_inserted_ids
         ]
       end
     end
